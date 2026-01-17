@@ -5,11 +5,13 @@
   --foreground: #171717;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
+  height: 100%;
   overflow-x: hidden;
-  overflow-y: auto;
+  background: linear-gradient(135deg, #3B101A, #471942, #2C285C);
 }
 
 

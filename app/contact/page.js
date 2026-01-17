@@ -65,7 +65,7 @@ export default function ContactPage() {
 
       {/* LOGIN / REGISTER BACKGROUND */}
       <div
-        className="absolute inset-0"
+        className="fixed inset-0"
         style={{
           background: "linear-gradient(135deg, #3B101A, #471942, #2C285C)",
         }}

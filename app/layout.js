@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import AppShell from '../components/AppShell';
 
 import "./globals.css";
 import Navbar from "../components/navbar";
@@ -26,10 +27,12 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {/* GLOBAL NAVBAR */}
-        <Navbar />
+        <AppShell>
 
         {/* PAGE CONTENT */}
+        
         {children}
+        </AppShell>
       </body>
     </html>
   );

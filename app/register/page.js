@@ -2,8 +2,16 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { headingFont } from "../layout";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+
+import { headingFont } from "../layout";
+
+/* ---------------- ANIMATIONS ---------------- */
 
 const container = {
   hidden: {},
@@ -20,7 +28,10 @@ const item = {
 };
 
 export default function RegisterPage() {
-  /* ---------------- FORM STATE ---------------- */
+  const router = useRouter();
+
+  /* ---------------- STATE ---------------- */
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -30,11 +41,15 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   /* ---------------- VALIDATION ---------------- */
+
   const isFormValid =
     form.name &&
     form.email &&
@@ -44,12 +59,47 @@ export default function RegisterPage() {
     form.confirmPassword &&
     form.password === form.confirmPassword;
 
+  /* ---------------- REGISTER ---------------- */
+
+  const handleRegister = async () => {
+    if (!isFormValid) return;
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const cred = await createUserWithEmailAndPassword(
+        auth,
+        form.email,
+        form.password
+      );
+
+      // ✅ SAVE USER DATA IN FIRESTORE
+      await setDoc(doc(db, "Users", cred.user.uid), {
+        name: form.name,
+        studentId: form.studentId,
+        college: form.college,
+        email: form.email,
+        member: false, // backend controlled
+        createdAt: new Date(),
+      });
+
+      // ✅ REDIRECT TO HOME PAGE
+      router.push("/");
+
+    } catch (err) {
+      setError(err.message.replace("Firebase:", ""));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen relative overflow-hidden flex items-center justify-center">
 
       {/* BACKGROUND */}
       <div
-        className="absolute inset-0"
+        className="fixed inset-0"
         style={{
           background: "linear-gradient(135deg, #3B101A, #471942, #2C285C)",
         }}
@@ -66,7 +116,7 @@ export default function RegisterPage() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="
-          relative z-10 w-full max-w-md h-[450px] mt-20
+          relative z-10 w-full max-w-md h-[480px]
           bg-gradient-to-br from-white/15 via-white/10 to-white/5
           backdrop-blur-2xl
           border border-white/30
@@ -75,15 +125,13 @@ export default function RegisterPage() {
           p-10
         "
       >
-        {/* INNER DEPTH */}
         <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />
 
-        {/* SCROLLABLE FORM */}
         <motion.div
           variants={container}
           initial="hidden"
           animate="show"
-          className="relative w-full h-full text-white overflow-y-auto pr-2"
+          className="relative w-full h-full overflow-y-auto pr-2 text-white"
         >
           <motion.h2
             variants={item}
@@ -126,29 +174,44 @@ export default function RegisterPage() {
             value={form.confirmPassword}
             onChange={handleChange}
             placeholder="Confirm Password"
-            className="w-full p-3 mb-4 rounded-xl bg-white/20 border border-white/25 outline-none focus:border-[#ed6ab8]"
+            className="w-full p-3 mb-3 rounded-xl bg-white/20 border border-white/25 outline-none focus:border-[#ed6ab8]"
           />
 
-          {/* PASSWORD MISMATCH WARNING */}
-          {form.confirmPassword && form.password !== form.confirmPassword && (
-            <p className="text-sm text-red-400 mb-4">
-              Passwords do not match
-            </p>
+          {form.confirmPassword &&
+            form.password !== form.confirmPassword && (
+              <p className="text-sm text-red-300 mb-3 text-center">
+                Passwords do not match
+              </p>
+            )}
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="
+                mb-4 px-4 py-3 rounded-xl
+                bg-red-500/15 border border-red-400/40
+                text-red-200 text-sm text-center
+                backdrop-blur-md
+              "
+            >
+              {error}
+            </motion.div>
           )}
 
-          {/* REGISTER BUTTON */}
           <motion.button
             variants={item}
-            disabled={!isFormValid}
-            className={`w-full py-3 mt-4 rounded-xl font-semibold shadow-lg transition
+            onClick={handleRegister}
+            disabled={!isFormValid || loading}
+            className={`w-full py-3 rounded-xl font-semibold transition
               ${
-                isFormValid
+                isFormValid && !loading
                   ? "bg-white text-black hover:scale-[1.02]"
                   : "bg-white/40 text-black/40 cursor-not-allowed"
               }
             `}
           >
-            Register
+            {loading ? "Registering..." : "Register"}
           </motion.button>
 
           <motion.p variants={item} className="mt-4 text-sm text-center">
